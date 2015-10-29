@@ -36,7 +36,7 @@ import time
 import smbus
 
 DS3231addr = 0x68
-24C32addr = 0x57  #(older boards use 0x56)
+AT24C32addr = 0x57  #(older boards use 0x56)
 
 def _bcd_to_int(bcd):
     """Decode a 2x4bit BCD to a integer.
@@ -79,7 +79,7 @@ class SDL_DS3231():
     ###########################
     # DS3231 Code
     ###########################
-    def __init__(self, twi=1, addr=DS3231addr, at24c32_addr=24C32addr):
+    def __init__(self, twi=1, addr=DS3231addr, at24c32_addr=AT24C32addr):
         self._bus = smbus.SMBus(twi)
         self._addr = addr
         self._at24c32_addr = at24c32_addr
