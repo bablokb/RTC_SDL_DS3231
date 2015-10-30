@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-
+"""
 # SDL_DS3231.py Python Driver Code
 # SwitchDoc Labs 12/19/2014
 # V 1.2
 # only works in 24 hour mode
-# now includes reading and writing the AT24C32 included on the SwitchDoc Labs 
-#	DS3231 / AT24C32 Module (www.switchdoc.com
-
+# now includes reading and writing the AT24C32 included on the SwitchDoc Labs
+#   DS3231 / AT24C32 Module (www.switchdoc.com
 
 #encoding: utf-8
- 
+
 # Copyright (C) 2013 @XiErCh
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,220 +28,242 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+"""
 
 from datetime import datetime
 
 import time
 import smbus
 
-DS3231addr = 0x68
-AT24C32addr = 0x57  #(older boards use 0x56)
+DS3231ADDR = 0x68 #known versions of DS3231 use 0x68
+AT24C32ADDR = 0x57  #older boards use 0x56
+I2C_PORT = 1 #valid ports are 0 and 1
 
 def _bcd_to_int(bcd):
-    """Decode a 2x4bit BCD to a integer.
+    """
+    Decode a 2x4bit BCD to a integer.
     """
     out = 0
-    for d in (bcd >> 4, bcd):
-        for p in (1, 2, 4 ,8):
-            if d & 1:
-                out += p
-            d >>= 1
+    for digit in (bcd >> 4, bcd):
+        for value in (1, 2, 4, 8):
+            if digit & 1:
+                out += value
+            digit >>= 1
         out *= 10
     return out / 10
 
 
-def _int_to_bcd(n):
-    """Encode a one or two digits number to the BCD.
+def _int_to_bcd(number):
+    """
+    Encode a one or two digits number to the BCD.
     """
     bcd = 0
-    for i in (n // 10, n % 10):
-        for p in (8, 4, 2, 1):
-            if i >= p:
+    for idx in (number // 10, number % 10):
+        for value in (8, 4, 2, 1):
+            if idx >= value:
                 bcd += 1
-                i -= p
+                idx -= value
             bcd <<= 1
     return bcd >> 1
 
 
-class SDL_DS3231():
-    _REG_SECONDS = 0x00
-    _REG_MINUTES = 0x01
-    _REG_HOURS = 0x02
-    _REG_DAY = 0x03
-    _REG_DATE = 0x04
-    _REG_MONTH = 0x05
-    _REG_YEAR = 0x06
+class sdl_ds3231():
+    """
+    Define the methods needed to read and update the real-time-clock module.
+    """
+
+    _SECONDS_REGISTER = 0x00
+    _MINUTES_REGISTER = 0x01
+    _HOURS_REGISTER = 0x02
+    _DAY_OF_WEEK_REGISTER = 0x03
+    _DAY_OF_MONTH_REGISTER = 0x04
+    _MONTH_REGISTER = 0x05
+    _YEAR_REGISTER = 0x06
     _REG_CONTROL = 0x07
-
-
 
     ###########################
     # DS3231 Code
     ###########################
-    def __init__(self, twi=1, addr=DS3231addr, at24c32_addr=AT24C32addr):
-        self._bus = smbus.SMBus(twi)
+    def __init__(self, port=I2C_PORT, addr=DS3231ADDR, at24c32_addr=AT24C32ADDR):
+        """
+        ???
+        """
+        self._bus = smbus.SMBus(port) #valid ports are 0 and 1
         self._addr = addr
         self._at24c32_addr = at24c32_addr
 
-
     def _write(self, register, data):
-        #print "addr =0x%x register = 0x%x data = 0x%x %i " % (self._addr, register, data,_bcd_to_int(data))
+        """
+        ???
+        """
         self._bus.write_byte_data(self._addr, register, data)
 
-
     def _read(self, data):
-
-        returndata = self._bus.read_byte_data(self._addr, data)
-        #print "addr = 0x%x data = 0x%x %i returndata = 0x%x %i " % (self._addr, data, data, returndata, _bcd_to_int(returndata))
-        return returndata
-
-
-
+        """
+        ???
+        """
+        return self._bus.read_byte_data(self._addr, data)
 
     def _read_seconds(self):
-        return _bcd_to_int(self._read(self._REG_SECONDS)& 0x7F)   # wipe out the oscillator on bit
-
+        """
+        ???
+        """
+        return _bcd_to_int(self._read(self._SECONDS_REGISTER) & 0x7F)   # wipe out the oscillator on bit
 
     def _read_minutes(self):
-        return _bcd_to_int(self._read(self._REG_MINUTES))
-
+        """
+        ???
+        """
+        return _bcd_to_int(self._read(self._MINUTES_REGISTER))
 
     def _read_hours(self):
-        d = self._read(self._REG_HOURS)
-	if (d == 0x64):
-		d = 0x40
-        return _bcd_to_int(d & 0x3F)
-
+        """
+        ???
+        """
+        tmp = self._read(self._HOURS_REGISTER)
+        if tmp == 0x64:
+            tmp = 0x40
+        return _bcd_to_int(tmp & 0x3F)
 
     def _read_day(self):
-        return _bcd_to_int(self._read(self._REG_DAY))
-
+        """
+        ???
+        """
+        return _bcd_to_int(self._read(self._DAY_OF_WEEK_REGISTER))
 
     def _read_date(self):
-        return _bcd_to_int(self._read(self._REG_DATE))
-
+        """
+        ???
+        """
+        return _bcd_to_int(self._read(self._DAY_OF_MONTH_REGISTER))
 
     def _read_month(self):
-        return _bcd_to_int(self._read(self._REG_MONTH))
-
+        """
+        ???
+        """
+        return _bcd_to_int(self._read(self._MONTH_REGISTER))
 
     def _read_year(self):
-        return _bcd_to_int(self._read(self._REG_YEAR))
-
+        """
+        ???
+        """
+        return _bcd_to_int(self._read(self._YEAR_REGISTER))
 
     def read_all(self):
-        """Return a tuple such as (year, month, date, day, hours, minutes,
-        seconds).
+        """
+        Return a tuple such as (year, month, daynum, dayname, hours, minutes, seconds).
         """
         return (self._read_year(), self._read_month(), self._read_date(),
                 self._read_day(), self._read_hours(), self._read_minutes(),
                 self._read_seconds())
 
-
     def read_str(self):
-        """Return a string such as 'YY-DD-MMTHH-MM-SS'.
+        """
+        Return a string such as 'YY-DD-MMTHH-MM-SS'.
         """
         return '%02d-%02d-%02dT%02d:%02d:%02d' % (self._read_year(),
                 self._read_month(), self._read_date(), self._read_hours(),
                 self._read_minutes(), self._read_seconds())
 
-
     def read_datetime(self, century=21, tzinfo=None):
-        """Return the datetime.datetime object.
+        """
+        Return the datetime.datetime object.
         """
         return datetime((century - 1) * 100 + self._read_year(),
                 self._read_month(), self._read_date(), self._read_hours(),
                 self._read_minutes(), self._read_seconds(), 0, tzinfo=tzinfo)
 
-
-    def write_all(self, seconds=None, minutes=None, hours=None, day=None,
-            date=None, month=None, year=None, save_as_24h=True):
-        """Direct write un-none value.
+    def write_all(self, seconds=None, minutes=None, hours=None, day_of_week=None,
+            day_of_month=None, month=None, year=None):
+        """
+        Direct write each user specified value.
         Range: seconds [0,59], minutes [0,59], hours [0,23],
-               day [0,7], date [1-31], month [1-12], year [0-99].
+                 day_of_week [0,7], day_of_month [1-31], month [1-12], year [0-99].
         """
         if seconds is not None:
             if seconds < 0 or seconds > 59:
                 raise ValueError('Seconds is out of range [0,59].')
-	    seconds_reg = _int_to_bcd(seconds)
-            self._write(self._REG_SECONDS, seconds_reg)
+            seconds_reg = _int_to_bcd(seconds)
+            self._write(self._SECONDS_REGISTER, seconds_reg)
 
         if minutes is not None:
             if minutes < 0 or minutes > 59:
                 raise ValueError('Minutes is out of range [0,59].')
-            self._write(self._REG_MINUTES, _int_to_bcd(minutes))
+            self._write(self._MINUTES_REGISTER, _int_to_bcd(minutes))
 
         if hours is not None:
             if hours < 0 or hours > 23:
                 raise ValueError('Hours is out of range [0,23].')
-            self._write(self._REG_HOURS, _int_to_bcd(hours) ) # not  | 0x40 according to datasheet
+            self._write(self._HOURS_REGISTER, _int_to_bcd(hours)) # not  | 0x40 according to datasheet
 
         if year is not None:
             if year < 0 or year > 99:
-                raise ValueError('Years is out of range [0,99].')
-            self._write(self._REG_YEAR, _int_to_bcd(year))
+                raise ValueError('Years is out of range [0, 99].')
+            self._write(self._YEAR_REGISTER, _int_to_bcd(year))
 
         if month is not None:
             if month < 1 or month > 12:
-                raise ValueError('Month is out of range [1,12].')
-            self._write(self._REG_MONTH, _int_to_bcd(month))
+                raise ValueError('Month is out of range [1, 12].')
+            self._write(self._MONTH_REGISTER, _int_to_bcd(month))
 
-        if date is not None:
-            if date < 1 or date > 31:
-                raise ValueError('Date is out of range [1,31].')
-            self._write(self._REG_DATE, _int_to_bcd(date))
+        if day_of_month is not None:
+            if day_of_month < 1 or day_of_month > 31:
+                raise ValueError('Day_of_month is out of range [1, 31].')
+            self._write(self._DAY_OF_MONTH_REGISTER, _int_to_bcd(day_of_month))
 
-        if day is not None:
-            if day < 1 or day > 7:
-                raise ValueError('Day is out of range [1,7].')
-            self._write(self._REG_DAY, _int_to_bcd(day))
+        if day_of_week is not None:
+            if day_of_week < 1 or day_of_week > 7:
+                raise ValueError('Day_of_week is out of range [1, 7].')
+            self._write(self._DAY_OF_WEEK_REGISTER, _int_to_bcd(day_of_week))
 
-
-    def write_datetime(self, dt):
-        """Write from a datetime.datetime object.
+    def write_datetime(self, dtime):
         """
-        self.write_all(dt.second, dt.minute, dt.hour,
-                dt.isoweekday(), dt.day, dt.month, dt.year % 100)
+        Write from a datetime.datetime object.
+        """
+        self.write_all(dtime.second, dtime.minute, dtime.hour,
+                dtime.isoweekday(), dtime.day, dtime.month, dtime.year % 100)
 
-
-    def write_now(self):
-        """Equal to DS3231.write_datetime(datetime.datetime.now()).
+    def write_system_datetime_now(self):
+        """
+        shortcut version of "DS3231.write_datetime(datetime.datetime.now())".
         """
         self.write_datetime(datetime.now())
 
-
-
-    def getTemp(self):
-   	byte_tmsb = self._bus.read_byte_data(self._addr,0x11)
-   	byte_tlsb = bin(self._bus.read_byte_data(self._addr,0x12))[2:].zfill(8)
-   	return byte_tmsb+int(byte_tlsb[0])*2**(-1)+int(byte_tlsb[1])*2**(-2)
+    def get_temp(self):
+        """
+        ???
+        """
+        byte_tmsb = self._bus.read_byte_data(self._addr, 0x11)
+        byte_tlsb = bin(self._bus.read_byte_data(self._addr, 0x12))[2:].zfill(8)
+        return byte_tmsb + int(byte_tlsb[0]) * 2 ** (-1) + int(byte_tlsb[1]) * 2 ** (-2)
 
     ###########################
     # AT24C32 Code
     ###########################
 
-    def set_current_AT24C32_address(self,address):
-	a1=address/256;
-  	a0=address%256;
-  	self._bus.write_i2c_block_data(self._at24c32_addr,a1,[a0])
+    def set_current_at24c32_address(self, address):
+        """
+        ???
+        """
+        addr1 = address / 256
+        addr0 = address % 256
+        self._bus.write_i2c_block_data(self._at24c32_addr, addr1, [addr0])
 
-	
-    def read_AT24C32_byte(self, address):
+    def read_at24c32_byte(self, address):
+        """
+        ???
+        """
         #print "i2c_address =0x%x eepromaddress = 0x%x  " % (self._at24c32_addr, address)
+        self.set_current_at24c32_address(address)
+        return self._bus.read_byte(self._at24c32_addr)
 
-        self.set_current_AT24C32_address(address)
-	return self._bus.read_byte(self._at24c32_addr)
-
-	
-
-    def write_AT24C32_byte(self, address, value):
+    def write_at24c32_byte(self, address, value):
+        """
+        ???
+        """
         #print "i2c_address =0x%x eepromaddress = 0x%x value = 0x%x %i " % (self._at24c32_addr, address, value, value)
-	
-
-	a1=address/256;
-  	a0=address%256;
-  	self._bus.write_i2c_block_data(self._at24c32_addr,a1,[a0, value])
-	time.sleep(0.20)
-
-
-
+        addr1 = address / 256
+        addr0 = address % 256
+        self._bus.write_i2c_block_data(self._at24c32_addr, addr1, [addr0, value])
+        time.sleep(0.20)
+# now includes reading and writing the AT24C32 included on the SwitchDoc Labs
