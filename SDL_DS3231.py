@@ -30,13 +30,14 @@
 # SOFTWARE.
 """
 
-from datetime import datetime
-
 import time
 import smbus
+from datetime import datetime
 
+# set I2c bus addresses of clock module and non-volatile ram 
 DS3231ADDR = 0x68 #known versions of DS3231 use 0x68
 AT24C32ADDR = 0x57  #older boards use 0x56
+
 I2C_PORT = 1 #valid ports are 0 and 1
 
 def _bcd_to_int(bcd):
@@ -55,7 +56,7 @@ def _bcd_to_int(bcd):
 
 def _int_to_bcd(number):
     """
-    Encode a one or two digits number to the BCD.
+    Encode a one or two digits number to the BCD format.
     """
     bcd = 0
     for idx in (number // 10, number % 10):
@@ -81,9 +82,6 @@ class sdl_ds3231():
     _YEAR_REGISTER = 0x06
     _REG_CONTROL = 0x07
 
-    ###########################
-    # DS3231 Code
-    ###########################
     def __init__(self, port=I2C_PORT, addr=DS3231ADDR, at24c32_addr=AT24C32ADDR):
         """
         ???
@@ -92,7 +90,10 @@ class sdl_ds3231():
         self._addr = addr
         self._at24c32_addr = at24c32_addr
 
-    def _write(self, register, data):
+    ###########################
+    # DS3231 real time clock functions
+    ###########################
+   def _write(self, register, data):
         """
         ???
         """
@@ -228,6 +229,10 @@ class sdl_ds3231():
         shortcut version of "DS3231.write_datetime(datetime.datetime.now())".
         """
         self.write_datetime(datetime.now())
+        
+    ###########################
+    # SDL_DS3231 module onboard temperature sensor
+    ###########################
 
     def get_temp(self):
         """
@@ -238,7 +243,7 @@ class sdl_ds3231():
         return byte_tmsb + int(byte_tlsb[0]) * 2 ** (-1) + int(byte_tlsb[1]) * 2 ** (-2)
 
     ###########################
-    # AT24C32 Code
+    # AT24C32 non-volatile ram Code
     ###########################
 
     def set_current_at24c32_address(self, address):
@@ -253,7 +258,6 @@ class sdl_ds3231():
         """
         ???
         """
-        #print "i2c_address =0x%x eepromaddress = 0x%x  " % (self._at24c32_addr, address)
         self.set_current_at24c32_address(address)
         return self._bus.read_byte(self._at24c32_addr)
 
@@ -261,9 +265,7 @@ class sdl_ds3231():
         """
         ???
         """
-        #print "i2c_address =0x%x eepromaddress = 0x%x value = 0x%x %i " % (self._at24c32_addr, address, value, value)
         addr1 = address / 256
         addr0 = address % 256
         self._bus.write_i2c_block_data(self._at24c32_addr, addr1, [addr0, value])
         time.sleep(0.20)
-# now includes reading and writing the AT24C32 included on the SwitchDoc Labs
