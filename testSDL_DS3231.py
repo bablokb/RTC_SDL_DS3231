@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """
-# Test SDL_DS3231
-# John C. Shovic, SwitchDoc Labs
-# 08/03/2014
+ Test SDL_DS3231
+ John C. Shovic, SwitchDoc Labs
+ 08/03/2014
+
+Additional code added by Conrad Storz in 2015 and 2016
 """
 
 # imports
